@@ -1,20 +1,60 @@
 package com.smeualex.envmonitor;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.view.View;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private static final String TAG = "MainActivity";
+
+    BluetoothAdapter mBluetoothAdapter; // alex: the BT adapter
+
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private final BroadcastReceiver mBroadcastReceiver_BtChange = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action.equals(mBluetoothAdapter.ACTION_STATE_CHANGED)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, mBluetoothAdapter.ERROR);
+
+                switch(state){
+                    case BluetoothAdapter.STATE_ON:
+                        Log.d(TAG, "onReceive: STATE ON");
+                        break;
+
+                    case BluetoothAdapter.STATE_OFF:
+                        Log.d(TAG, "onReceive: STATE OFF");
+                        break;
+
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        Log.d(TAG, "onReceive: STATE TURNING OB");
+                        break;
+
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        Log.d(TAG, "onReceive: STATE TURNING OFF");
+                        break;
+                }
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,7 +62,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-// stuff
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -40,6 +80,15 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy()");
+        super.onDestroy();
+        unregisterReceiver(mBroadcastReceiver_BtChange);
     }
 
     @Override
@@ -80,8 +129,9 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
+        if (id == R.id.nav_bluetoothOn) {
+            Log.d(TAG, "onNavigationItemSelected() - BT Enable/Disable clicked");
+            enableDisableBluetooth();
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -97,5 +147,32 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+
+    public void enableDisableBluetooth() {
+        // NO BLUETOOTH
+        if (mBluetoothAdapter == null) {
+            Log.e(TAG, getString(R.string.errorNoBT));
+        }
+
+        // BLUETOOTH IS DISABLED    ==>     enable it
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivity(enableBTIntent);
+
+            /* use broadcast received to intercept the BT state changes to log them */
+            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
+        }
+
+        // BLUETOOTH IS ENABLED     ==>     disable id
+        if(mBluetoothAdapter.isEnabled()){
+            mBluetoothAdapter.disable();
+
+            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
+        }
+
     }
 }
