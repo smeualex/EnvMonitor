@@ -9,9 +9,9 @@
             android:icon="@drawable/bluetooth"
             android:title="Bluetooth On/Off" />
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/nav_btDiscoverable"
             android:icon="@drawable/ic_menu_gallery"
-            android:title="Gallery" />
+            android:title="Make Discoverable..." />
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_menu_slideshow"

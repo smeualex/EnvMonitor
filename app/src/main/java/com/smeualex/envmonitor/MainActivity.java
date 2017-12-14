@@ -55,6 +55,43 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
+    /**
+     * Broadcast Receiver for changes made to bluetooth states such as:
+     * 1) Discoverability mode on/off or expire.
+     */
+    private final BroadcastReceiver mBroadcastReceiver_BT_ScanMode = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)) {
+
+                int mode = intent.getIntExtra(BluetoothAdapter.EXTRA_SCAN_MODE, BluetoothAdapter.ERROR);
+
+                switch (mode) {
+                    //Device is in Discoverable Mode
+                    case BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+                        Log.d(TAG, "mBroadcastReceiver_BT_ScanMode: Discoverability Enabled.");
+                        break;
+                    //Device not in discoverable mode
+                    case BluetoothAdapter.SCAN_MODE_CONNECTABLE:
+                        Log.d(TAG, "mBroadcastReceiver_BT_ScanMode: Discoverability Disabled. Able to receive connections.");
+                        break;
+                    case BluetoothAdapter.SCAN_MODE_NONE:
+                        Log.d(TAG, "mBroadcastReceiver_BT_ScanMode: Discoverability Disabled. Not able to receive connections.");
+                        break;
+                    case BluetoothAdapter.STATE_CONNECTING:
+                        Log.d(TAG, "mBroadcastReceiver_BT_ScanMode: Connecting....");
+                        break;
+                    case BluetoothAdapter.STATE_CONNECTED:
+                        Log.d(TAG, "mBroadcastReceiver_BT_ScanMode: Connected.");
+                        break;
+                }
+
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +126,7 @@ public class MainActivity extends AppCompatActivity
         Log.d(TAG, "onDestroy()");
         super.onDestroy();
         unregisterReceiver(mBroadcastReceiver_BtChange);
+        unregisterReceiver(mBroadcastReceiver_BT_ScanMode);
     }
 
     @Override
@@ -132,8 +170,9 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_bluetoothOn) {
             Log.d(TAG, "onNavigationItemSelected() - BT Enable/Disable clicked");
             enableDisableBluetooth();
-        } else if (id == R.id.nav_gallery) {
-
+        } else if (id == R.id.nav_btDiscoverable) {
+            Log.d(TAG, "onNavigationItemSelected() - BT Enable/Disable discoverable");
+            enableDisableDiscoverable();
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {
@@ -148,7 +187,6 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
 
     public void enableDisableBluetooth() {
         // NO BLUETOOTH
@@ -174,5 +212,18 @@ public class MainActivity extends AppCompatActivity
             registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
         }
 
+    }
+
+    public void enableDisableDiscoverable(){
+        Log.d(TAG, "enableDisableDiscoverable: Making device discoverable for 300 seconds.");
+
+        /** REQUEST DISCOVERABLE for 300s           */
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+        startActivity(discoverableIntent);
+
+        /** Broadcast receiver for the SCAN MODE    */
+        IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BT_ScanMode,intentFilter);
     }
 }
