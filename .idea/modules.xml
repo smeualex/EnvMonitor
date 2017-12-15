@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/EnvMonitor.iml" filepath="$PROJECT_DIR$/EnvMonitor.iml" />
-      <module fileurl="file://C:\Personal\Android\EnvMonitor\EnvMonitor.iml" filepath="C:\Personal\Android\EnvMonitor\EnvMonitor.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

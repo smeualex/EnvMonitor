@@ -6,4 +6,7 @@
 
     <string name="action_settings">Settings</string>
     <string name="errorNoBT">enableDisableBT: Device does not have Bluetooth</string>
+
+    <string name="navBT_ON">Bluetooth on</string>
+    <string name="navBT_OFF">Bluetooth off</string>
 </resources>

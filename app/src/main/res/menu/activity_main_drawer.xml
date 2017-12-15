@@ -3,19 +3,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <group android:checkableBehavior="single">
+    <group>
         <item
             android:id="@+id/nav_bluetoothOn"
-            android:icon="@drawable/bluetooth"
+            android:icon="@drawable/ic_bluetooth_black_24dp"
             android:title="Bluetooth On/Off" />
         <item
             android:id="@+id/nav_btDiscoverable"
-            android:icon="@drawable/ic_menu_gallery"
+            android:icon="@drawable/ic_menu_share"
             android:title="Make Discoverable..." />
         <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="Slideshow" />
+            android:id="@+id/nav_btDiscover"
+            android:icon="@drawable/ic_bluetooth_searching_black_24dp"
+            android:title="Discover Devices" />
         <item
             android:id="@+id/nav_manage"
             android:icon="@drawable/ic_menu_manage"
