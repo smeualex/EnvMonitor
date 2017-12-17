@@ -21,13 +21,14 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.Manifest;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
 
     private static final String TAG = "MainActivity";
 
@@ -138,7 +139,7 @@ public class MainActivity extends AppCompatActivity
 
             }
         }
-    }
+    };
 
     /**
      * Broadcast Receiver for BT Device found
@@ -196,6 +197,7 @@ public class MainActivity extends AppCompatActivity
 
         // BLUETOOTH ADAPTER
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         blueTooth_NAV = navigationView.getMenu().findItem(R.id.nav_bluetoothOn);
 
@@ -213,6 +215,8 @@ public class MainActivity extends AppCompatActivity
         );
 
         lvNewDevices = findViewById(R.id.lvNewDevices);
+        // SET THE ON CLICK LISTENER on the new devices list //
+        lvNewDevices.setOnItemClickListener(MainActivity.this);
     }
 
     @Override
@@ -363,5 +367,24 @@ public class MainActivity extends AppCompatActivity
         /** Broadcast receiver for the SCAN MODE    */
         IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
         registerReceiver(mBroadcastReceiver_BT_ScanMode,intentFilter);
+    }
+
+    /// on click for the device list
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        // first cancel BT discovery => very memory intensive
+        mBluetoothAdapter.cancelDiscovery();
+        Log.d(TAG, "onItemClick(): You clicked a Bluetooth device!");
+        String deviceName = mBTDevices.get(i).getName();
+        String deviceAddr = mBTDevices.get(i).getAddress();
+        Log.d(TAG, "onItemClick():      >>>>>> " + deviceName);
+        Log.d(TAG, "onItemClick():      >>>>>> " + deviceAddr);
+
+        // create the bond
+        // NOTE: requires API lvl > 18
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2){
+            Log.d(TAG, "Pairing with device: " + deviceName + "[" + deviceAddr + "]");
+            mBTDevices.get(i).createBond();
+        }
     }
 }
