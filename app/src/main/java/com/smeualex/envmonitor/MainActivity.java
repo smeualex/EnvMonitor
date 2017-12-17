@@ -191,9 +191,19 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        /** BROADCAST RECEIVERS **/
         // Intent Filter to get the BOND BT notifications
         IntentFilter btBondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mBroadcastReceiver_BT_Bonded, btBondFilter);
+        //
+        IntentFilter discoverBTDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mBroadcastReceiver_BT_DeviceFound, discoverBTDevicesIntent);
+        /* use broadcast received to intercept the BT state changes to log them */
+        IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
+        /* Broadcast receiver for the SCAN MODE    */
+        IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BT_ScanMode,intentFilter);
 
         // BLUETOOTH ADAPTER
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -304,8 +314,6 @@ public class MainActivity extends AppCompatActivity
 
         // start discovery and setup the BroadcastReceiver
         mBluetoothAdapter.startDiscovery();
-        IntentFilter discoverBTDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mBroadcastReceiver_BT_DeviceFound, discoverBTDevicesIntent);
     }
 
     /**
@@ -342,16 +350,11 @@ public class MainActivity extends AppCompatActivity
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivity(enableBTIntent);
-            /* use broadcast received to intercept the BT state changes to log them */
-            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-            registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
         }
 
         // BLUETOOTH IS ENABLED     ==>     disable id
         if(mBluetoothAdapter.isEnabled()){
             mBluetoothAdapter.disable();
-            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-            registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
         }
 
     }
@@ -363,10 +366,6 @@ public class MainActivity extends AppCompatActivity
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
         startActivity(discoverableIntent);
-
-        /** Broadcast receiver for the SCAN MODE    */
-        IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
-        registerReceiver(mBroadcastReceiver_BT_ScanMode,intentFilter);
     }
 
     /// on click for the device list
