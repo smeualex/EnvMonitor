@@ -110,6 +110,37 @@ public class MainActivity extends AppCompatActivity
     };
 
     /**
+     * Broadcast Receiver for changes to the BONDED state
+     */
+    private final BroadcastReceiver mBroadcastReceiver_BT_Bonded = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if(action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                switch(device.getBondState()){
+                    // already bonded
+                    case BluetoothDevice.BOND_BONDED:
+                        Log.d(TAG, "mBroadcastReceiver_BT_Bonded: BOND_BOND");
+                        break;
+
+                    // creating a bond
+                    case BluetoothDevice.BOND_BONDING:
+                        Log.d(TAG, "mBroadcastReceiver_BT_Bonded: BOND_BONDING");
+                        break;
+
+                    // breaking a bond
+                    case BluetoothDevice.BOND_NONE:
+                        Log.d(TAG, "mBroadcastReceiver_BT_Bonded: BOND_NONE");
+                        break;
+                }
+
+            }
+        }
+    }
+
+    /**
      * Broadcast Receiver for BT Device found
      */
     private final BroadcastReceiver mBroadcastReceiver_BT_DeviceFound = new BroadcastReceiver() {
@@ -159,6 +190,11 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        // Intent Filter to get the BOND BT notifications
+        IntentFilter btBondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BT_Bonded, btBondFilter);
+
+        // BLUETOOTH ADAPTER
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         blueTooth_NAV = navigationView.getMenu().findItem(R.id.nav_bluetoothOn);
@@ -186,6 +222,7 @@ public class MainActivity extends AppCompatActivity
         unregisterReceiver(mBroadcastReceiver_BtChange);
         unregisterReceiver(mBroadcastReceiver_BT_ScanMode);
         unregisterReceiver(mBroadcastReceiver_BT_DeviceFound);
+        unregisterReceiver(mBroadcastReceiver_BT_Bonded);
     }
 
     @Override
