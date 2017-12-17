@@ -267,6 +267,13 @@ public class MainActivity extends AppCompatActivity
         registerReceiver(mBroadcastReceiver_BT_DeviceFound, discoverBTDevicesIntent);
     }
 
+    /**
+     * This method is required for all devices running API23+
+     * Android must programmatically check the permissions for bluetooth. Putting the proper permissions
+     * in the manifest is not enough.
+     *
+     * NOTE: This will only execute on versions > LOLLIPOP because it is not needed otherwise.
+     */
     @TargetApi(23)
     private void checkBTPermissions(){
         if(Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
