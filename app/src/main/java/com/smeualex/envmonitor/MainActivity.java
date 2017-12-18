@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity
     BluetoothAdapter mBluetoothAdapter; // alex: the BT adapter
 
     public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
-    public BT_DeviceListaAdapter mDevicesListAdapter;
+    public BT_DeviceListAdapter mDevicesListAdapter;
     ListView lvNewDevices;
 
     // Create a BroadcastReceiver for ACTION_FOUND.
@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity
                 Log.d(TAG, "BT_DeviceFound - onReceive() - "
                         + device.getName() + ": " + device.getAddress());
 
-                mDevicesListAdapter = new BT_DeviceListaAdapter(context, R.layout.device_adapter_view, mBTDevices);
+                mDevicesListAdapter = new BT_DeviceListAdapter(context, R.layout.device_adapter_view, mBTDevices);
                 lvNewDevices.setAdapter(mDevicesListAdapter);
             }
         }

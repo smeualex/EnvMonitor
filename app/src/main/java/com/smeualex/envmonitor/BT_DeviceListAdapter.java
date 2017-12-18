@@ -14,7 +14,7 @@ import java.util.ArrayList;
  * Created by asm on 12/15/2017.
  */
 
-public class BT_DeviceListaAdapter extends ArrayAdapter<BluetoothDevice> {
+public class BT_DeviceListAdapter extends ArrayAdapter<BluetoothDevice> {
 
     static class ViewHolderItem{
         private TextView deviceName;
@@ -25,7 +25,7 @@ public class BT_DeviceListaAdapter extends ArrayAdapter<BluetoothDevice> {
     private ArrayList<BluetoothDevice> mDevices;
     private int mViewResourceId;
 
-    public BT_DeviceListaAdapter(Context context, int tvResourceId, ArrayList<BluetoothDevice> devices){
+    public BT_DeviceListAdapter(Context context, int tvResourceId, ArrayList<BluetoothDevice> devices) {
         super(context, tvResourceId, devices);
 
         this.mDevices = devices;
