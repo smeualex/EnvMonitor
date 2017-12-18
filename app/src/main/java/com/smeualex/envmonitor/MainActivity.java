@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -31,9 +32,14 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
 
     private static final String TAG = "MainActivity";
+    private static final int DISCOVERABLE_TIME = 120;
+
+    CountDownTimer discoverableTimer;
+    Boolean isDiscoverable;
 
     NavigationView navigationView;
     MenuItem blueTooth_NAV;
+    MenuItem blueTooth_Discovery_NAV;
     BluetoothAdapter mBluetoothAdapter; // alex: the BT adapter
 
     public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
@@ -210,6 +216,7 @@ public class MainActivity extends AppCompatActivity
 
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         blueTooth_NAV = navigationView.getMenu().findItem(R.id.nav_bluetoothOn);
+        blueTooth_Discovery_NAV = navigationView.getMenu().findItem(R.id.nav_btDiscoverable);
 
         /* SET THE CORRECT ICON FROM THE START */
         blueTooth_NAV.setIcon(
@@ -227,6 +234,25 @@ public class MainActivity extends AppCompatActivity
         lvNewDevices = findViewById(R.id.lvNewDevices);
         // SET THE ON CLICK LISTENER on the new devices list //
         lvNewDevices.setOnItemClickListener(MainActivity.this);
+
+
+        isDiscoverable = false;
+        discoverableTimer = new CountDownTimer(DISCOVERABLE_TIME * 1000, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+                Log.d(TAG, " >>> TIMER: Device discoverable for " + (millisUntilFinished / 1000) + "s");
+                blueTooth_Discovery_NAV.setTitle("Discoverable for "
+                        + (millisUntilFinished / 1000) + "s");
+            }
+
+            @Override
+            public void onFinish() {
+                isDiscoverable = false;
+                Log.d(TAG, " >>> TIMER: finished");
+                blueTooth_Discovery_NAV.setTitle("Make Discoverable...");
+            }
+        };
     }
 
     @Override
@@ -283,7 +309,7 @@ public class MainActivity extends AppCompatActivity
             Log.d(TAG, "onNavigationItemSelected() - BT Enable/Disable clicked");
             enableDisableBluetooth(item);
         } else if (id == R.id.nav_btDiscoverable) {
-            Log.d(TAG, "onNavigationItemSelected() - BT Enable/Disable discoverable");
+            Log.d(TAG, " >>>>>>> onNavigationItemSelected() - BT Enable/Disable discoverable");
             enableDisableDiscoverable();
         } else if (id == R.id.nav_btDiscover) {
             Log.d(TAG, "onNavigationItemSelected() - BT Discover Devices...");
@@ -361,11 +387,17 @@ public class MainActivity extends AppCompatActivity
 
     public void enableDisableDiscoverable(){
         Log.d(TAG, "enableDisableDiscoverable: Making device discoverable for 300 seconds.");
+        /** REQUEST DISCOVERABLE for 120s           */
+        if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, DISCOVERABLE_TIME);
+            startActivity(discoverableIntent);
+        }
 
-        /** REQUEST DISCOVERABLE for 300s           */
-        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-        startActivity(discoverableIntent);
+        if (!isDiscoverable) {
+            isDiscoverable = true;
+            discoverableTimer.start();
+        }
     }
 
     /// on click for the device list
