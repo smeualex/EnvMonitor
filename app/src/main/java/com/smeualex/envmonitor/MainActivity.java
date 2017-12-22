@@ -1,5 +1,6 @@
 package com.smeualex.envmonitor;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -25,12 +26,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.Manifest;
+
+import com.smeualex.envmonitor.util.Util;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
+
+    // activity codes for onActivityResult()
+    private static final int ACTIVITY_CODE_TURN_BT_ON = 1;
 
     private static final String TAG = "MainActivity";
     private static final int DISCOVERABLE_TIME = 120;
@@ -43,9 +48,134 @@ public class MainActivity extends AppCompatActivity
     MenuItem blueTooth_Discovery_NAV;
     BluetoothAdapter mBluetoothAdapter; // alex: the BT adapter
 
+    DrawerLayout drawer;
+
     public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
     public BT_DeviceListAdapter mDevicesListAdapter;
     ListView lvNewDevices;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, " >>>> onCreate()");
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+
+
+        drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        /* BROADCAST RECEIVERS */
+        // Intent Filter to get the BOND BT notifications
+        IntentFilter btBondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BT_Bonded, btBondFilter);
+        //
+        IntentFilter discoverBTDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mBroadcastReceiver_BT_DeviceFound, discoverBTDevicesIntent);
+        /* use broadcast received to intercept the BT state changes to log them */
+        IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
+        /* Broadcast receiver for the SCAN MODE    */
+        IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        registerReceiver(mBroadcastReceiver_BT_ScanMode,intentFilter);
+
+        // BLUETOOTH ADAPTER
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if(mBluetoothAdapter == null){
+            //Show a mensag. that the device has no bluetooth adapter
+            Util.msgSnack(drawer, "Bluetooth Device Not Available");
+            //finish apk
+            finish();
+        }
+        else if(!mBluetoothAdapter.isEnabled()) {
+            //Ask to the user turn the bluetooth on
+            Util.msgSnack(drawer, "Turning on Bluetooth");
+            Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(turnBTon, ACTIVITY_CODE_TURN_BT_ON);
+        }
+
+        navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        blueTooth_NAV = navigationView.getMenu().findItem(R.id.nav_bluetoothOn);
+        blueTooth_Discovery_NAV = navigationView.getMenu().findItem(R.id.nav_btDiscoverable);
+
+        /* SET THE CORRECT ICON FROM THE START */
+        blueTooth_NAV.setIcon(
+                (mBluetoothAdapter.isEnabled())             ?
+                        R.drawable.ic_bluetooth_black_24dp  :
+                        R.drawable.ic_bluetooth_disabled_black_24dp
+        );
+
+        blueTooth_NAV.setTitle(
+                (mBluetoothAdapter.isEnabled()) ?
+                        R.string.navBT_OFF       :
+                        R.string.navBT_ON
+        );
+
+        lvNewDevices = findViewById(R.id.lvNewDevices);
+        // SET THE ON CLICK LISTENER on the new devices list //
+        lvNewDevices.setOnItemClickListener(MainActivity.this);
+
+
+        isDiscoverable = false;
+        discoverableTimer = new CountDownTimer(DISCOVERABLE_TIME * 1000, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+                Log.d(TAG, " >>> TIMER: Device discoverable for " + (millisUntilFinished / 1000) + "s");
+                blueTooth_Discovery_NAV.setTitle("Discoverable for "
+                        + (millisUntilFinished / 1000) + "s");
+            }
+
+            @Override
+            public void onFinish() {
+                isDiscoverable = false;
+                Log.d(TAG, " >>> TIMER: finished");
+                blueTooth_Discovery_NAV.setTitle("Make Discoverable...");
+            }
+        };
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, " >>>> onDestroy()");
+        super.onDestroy();
+        unregisterReceiver(mBroadcastReceiver_BtChange);
+        unregisterReceiver(mBroadcastReceiver_BT_ScanMode);
+        unregisterReceiver(mBroadcastReceiver_BT_DeviceFound);
+        unregisterReceiver(mBroadcastReceiver_BT_Bonded);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        Log.d(TAG, "onActivityResult(): requestCode = " + requestCode + "; " +
+                                             "resultCode = " + resultCode + ";");
+        switch(requestCode){
+            case ACTIVITY_CODE_TURN_BT_ON:
+                if(resultCode == RESULT_OK){
+                    Log.d(TAG, "onActivityResult():         BT Turned on - OK!");
+                }
+                break;
+        }
+    }
 
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver mBroadcastReceiver_BtChange = new BroadcastReceiver() {
@@ -175,99 +305,6 @@ public class MainActivity extends AppCompatActivity
             }
         }
     };
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, " >>>> onCreate()");
-
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
-        /* BROADCAST RECEIVERS */
-        // Intent Filter to get the BOND BT notifications
-        IntentFilter btBondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        registerReceiver(mBroadcastReceiver_BT_Bonded, btBondFilter);
-        //
-        IntentFilter discoverBTDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mBroadcastReceiver_BT_DeviceFound, discoverBTDevicesIntent);
-        /* use broadcast received to intercept the BT state changes to log them */
-        IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        registerReceiver(mBroadcastReceiver_BtChange, BTIntent);
-        /* Broadcast receiver for the SCAN MODE    */
-        IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
-        registerReceiver(mBroadcastReceiver_BT_ScanMode,intentFilter);
-
-        // BLUETOOTH ADAPTER
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
-        blueTooth_NAV = navigationView.getMenu().findItem(R.id.nav_bluetoothOn);
-        blueTooth_Discovery_NAV = navigationView.getMenu().findItem(R.id.nav_btDiscoverable);
-
-        /* SET THE CORRECT ICON FROM THE START */
-        blueTooth_NAV.setIcon(
-                (mBluetoothAdapter.isEnabled())             ?
-                        R.drawable.ic_bluetooth_black_24dp  :
-                        R.drawable.ic_bluetooth_disabled_black_24dp
-        );
-
-        blueTooth_NAV.setTitle(
-                (mBluetoothAdapter.isEnabled()) ?
-                        R.string.navBT_OFF       :
-                        R.string.navBT_ON
-        );
-
-        lvNewDevices = findViewById(R.id.lvNewDevices);
-        // SET THE ON CLICK LISTENER on the new devices list //
-        lvNewDevices.setOnItemClickListener(MainActivity.this);
-
-
-        isDiscoverable = false;
-        discoverableTimer = new CountDownTimer(DISCOVERABLE_TIME * 1000, 1000) {
-
-            @Override
-            public void onTick(long millisUntilFinished) {
-                Log.d(TAG, " >>> TIMER: Device discoverable for " + (millisUntilFinished / 1000) + "s");
-                blueTooth_Discovery_NAV.setTitle("Discoverable for "
-                        + (millisUntilFinished / 1000) + "s");
-            }
-
-            @Override
-            public void onFinish() {
-                isDiscoverable = false;
-                Log.d(TAG, " >>> TIMER: finished");
-                blueTooth_Discovery_NAV.setTitle("Make Discoverable...");
-            }
-        };
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.d(TAG, " >>>> onDestroy()");
-        super.onDestroy();
-        unregisterReceiver(mBroadcastReceiver_BtChange);
-        unregisterReceiver(mBroadcastReceiver_BT_ScanMode);
-        unregisterReceiver(mBroadcastReceiver_BT_DeviceFound);
-        unregisterReceiver(mBroadcastReceiver_BT_Bonded);
-    }
 
     @Override
     public void onBackPressed() {
@@ -326,8 +363,8 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-//        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-//        drawer.closeDrawer(GravityCompat.START);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
